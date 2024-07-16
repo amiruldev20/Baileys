@@ -20,7 +20,11 @@
     "author": "Adhiraj Singh",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",
-    "files": ["lib/*", "WAProto/*", "WASignalGroup/*.js"],
+    "files": [
+        "lib/*",
+        "WAProto/*",
+        "WASignalGroup/*.js"
+    ],
     "scripts": {
         "build:all": "tsc && typedoc",
         "build:docs": "typedoc",
@@ -46,7 +50,6 @@
         "axios": "^1.6.0",
         "cache-manager": "4.0.1",
         "futoin-hkdf": "^1.5.1",
-        "link-preview-js": "^3.0.0",
         "libphonenumber-js": "^1.10.20",
         "libsignal": "github:amiruldev20/signal-node",
         "lodash": "^4.17.21",
@@ -54,8 +57,6 @@
         "node-cache": "^5.1.2",
         "pino": "^7.0.0",
         "protobufjs": "^7.2.4",
-        "sharp": "^0.33.4",
-        "qrcode-terminal": "^0.12.0",
         "uuid": "^10.0.0",
         "ws": "^8.13.0"
     },
@@ -71,8 +72,11 @@
         "jest": "^27.0.6",
         "jimp": "^0.16.1",
         "json": "^11.0.0",
+        "link-preview-js": "^3.0.0",
         "open": "^8.4.2",
+        "qrcode-terminal": "^0.12.0",
         "release-it": "^15.10.3",
+        "sharp": "^0.32.6",
         "ts-jest": "^27.0.3",
         "ts-node": "^10.8.1",
         "typedoc": "^0.24.7",
