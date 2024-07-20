@@ -208,7 +208,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		}
 	}
 
-	const fetchDisappearingDuration = async(...jids: string[]) => {
+	const fetchExpiration = async(...jids: string[]) => {
 		const list = jids.map((jid) => ({ tag: 'user', attrs: { jid } }))
 		const results = await interactiveQuery(
 			list,
@@ -1013,6 +1013,7 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		removeChatLabel,
 		addMessageLabel,
 		removeMessageLabel,
-		star
+		star,
+		fetchExpiration
 	}
 }
