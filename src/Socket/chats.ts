@@ -1101,6 +1101,6 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		removeMessageLabel,
 		star,
 		fetchExpiration,
-		getNewsLetterInfo
+		getNewsletterInfo
 	}
 }
