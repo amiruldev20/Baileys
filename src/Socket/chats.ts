@@ -5,7 +5,7 @@ import { ALL_WA_PATCH_NAMES, ChatModification, ChatMutation, LTHashState, Messag
 import { chatModificationToAppPatch, ChatMutationMap, decodePatches, decodeSyncdSnapshot, encodeSyncdPatch, extractSyncdPatches, generateProfilePicture, getHistoryMsg, newLTHashState, processSyncAction } from '../Utils'
 import { makeMutex } from '../Utils/make-mutex'
 import processMessage from '../Utils/process-message'
-import { BinaryNode, getBinaryNodeChild, getBinaryNodeChildren, jidNormalizedUser, reduceBinaryNodeToDictionary, S_WHATSAPP_NET } from '../WABinary'
+import { BinaryNode, getBinaryNodeChild, getBinaryNodeChildren, getBinaryNodeChildString, jidNormalizedUser, reduceBinaryNodeToDictionary, S_WHATSAPP_NET } from '../WABinary'
 import { makeSocket } from './socket'
 
 const MAX_SYNC_ATTEMPTS = 2
@@ -842,9 +842,28 @@ export const makeChatsSocket = (config: SocketConfig) => {
 	 * get detail info channel
 	 * input by link
 	 */
-	- async function getNewsLetterInfo(code) {
-		const jid = code.replace("https://whatsapp.com/channel/", "")
-		let payload = {
+
+	interface NewsletterInfo {
+		id: string;
+		status: string;
+		name: string;
+		pict: string;
+		created_at: string;
+		followers: number;
+		description: {
+			id: string;
+			text: string;
+			updated_time: string;
+		};
+		invite_code: string;
+		isVerified: boolean;
+		settings: any; // Adjust this to match your expected data type for settings
+	}
+
+	const getNewsletterInfo = async (code: string): Promise<NewsletterInfo> => {
+		const jid = code.replace("https://whatsapp.com/channel/", "");
+
+		const payload = {
 			variables: {
 				input: {
 					key: jid,
@@ -857,44 +876,51 @@ export const makeChatsSocket = (config: SocketConfig) => {
 			},
 		};
 
-		let data = await query({
-			tag: 'iq',
-			attrs: {
-				id: generateMessageTag(),
-				to: '@s.whatsapp.net',
-				type: 'get',
-				xmlns: 'w:mex',
-			},
-			content: [
-				{
-					tag: 'query',
-					attrs: {
-						query_id: '6620195908089573',
-					},
-					content: Buffer.from(JSON.stringify(payload)),
+		try {
+			const data = await query({
+				tag: 'iq',
+				attrs: {
+					id: generateMessageTag(),
+					to: '@s.whatsapp.net',
+					type: 'get',
+					xmlns: 'w:mex',
 				},
-			],
-		});
+				content: [
+					{
+						tag: 'query',
+						attrs: {
+							query_id: '6620195908089573',
+						},
+						content: Buffer.from(JSON.stringify(payload)),
+					},
+				],
+			});
 
-		let result = JSON.parse(getBinaryNodeChildString(data, 'result'));
-		const json = result.data.xwa2_newsletter
-		return {
-			id: json.id,
-			status: json.state.type,
-			name: json.thread_metadata.name,
-			pict: json.thread_metadata.picture,
-			created_at: json.thread_metadata.creation_time,
-			followers: json.thread_metadata.subscribers_count,
-			description: {
-				id: json.thread_metadata.description.id,
-				text: json.thread_metadata.description.text,
-				updated_time: json.thread_metadata.description.update_time
-			},
-			invite_code: json.thread_metadata.invite,
-			isVerified: json.thread_metadata.verification === "VERIFIED" ? true : false,
-			settings: json.thread_metadata.settings
+			// Ensure data is not undefined before passing to getBinaryNodeChildString
+			const result = data ? JSON.parse(getBinaryNodeChildString(data, 'result')) : {};
+			const json = result.data?.xwa2_newsletter || {};
+
+			return {
+				id: json.id || '',
+				status: json.state?.type || '',
+				name: json.thread_metadata?.name || '',
+				pict: json.thread_metadata?.picture || '',
+				created_at: json.thread_metadata?.creation_time || '',
+				followers: json.thread_metadata?.subscribers_count || 0,
+				description: {
+					id: json.thread_metadata?.description?.id || '',
+					text: json.thread_metadata?.description?.text || '',
+					updated_time: json.thread_metadata?.description?.update_time || '',
+				},
+				invite_code: json.thread_metadata?.invite || '',
+				isVerified: json.thread_metadata?.verification === "VERIFIED",
+				settings: json.thread_metadata?.settings || {}, // Ensure this matches your expected data type
+			};
+		} catch (error) {
+			console.error('Error while fetching newsletter info:', error);
+			throw error; // or handle the error as appropriate
 		}
-	}
+	};
 
 	/**
 	 * queries need to be fired on connection open
