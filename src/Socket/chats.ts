@@ -838,89 +838,6 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		}, jid)
 	}
 
-	/**
-	 * get detail info channel
-	 * input by link
-	 */
-
-	interface NewsletterInfo {
-		id: string;
-		status: string;
-		name: string;
-		pict: string;
-		created_at: string;
-		followers: number;
-		description: {
-			id: string;
-			text: string;
-			updated_time: string;
-		};
-		invite_code: string;
-		isVerified: boolean;
-		settings: any; // Adjust this to match your expected data type for settings
-	}
-
-	const getNewsletterInfo = async (code: string): Promise<NewsletterInfo> => {
-		const jid = code.replace("https://whatsapp.com/channel/", "");
-
-		const payload = {
-			variables: {
-				input: {
-					key: jid,
-					type: 'INVITE',
-					view_role: 'GUEST',
-				},
-				fetch_viewer_metadata: false,
-				fetch_full_image: true,
-				fetch_creation_time: true,
-			},
-		};
-
-		try {
-			const data = await query({
-				tag: 'iq',
-				attrs: {
-					id: generateMessageTag(),
-					to: '@s.whatsapp.net',
-					type: 'get',
-					xmlns: 'w:mex',
-				},
-				content: [
-					{
-						tag: 'query',
-						attrs: {
-							query_id: '6620195908089573',
-						},
-						content: Buffer.from(JSON.stringify(payload)),
-					},
-				],
-			});
-
-			// Ensure data is not undefined before passing to getBinaryNodeChildString
-			const result = data ? JSON.parse(getBinaryNodeChildString(data, 'result')) : {};
-			const json = result.data?.xwa2_newsletter || {};
-
-			return {
-				id: json.id || '',
-				status: json.state?.type || '',
-				name: json.thread_metadata?.name || '',
-				pict: json.thread_metadata?.picture || '',
-				created_at: json.thread_metadata?.creation_time || '',
-				followers: json.thread_metadata?.subscribers_count || 0,
-				description: {
-					id: json.thread_metadata?.description?.id || '',
-					text: json.thread_metadata?.description?.text || '',
-					updated_time: json.thread_metadata?.description?.update_time || '',
-				},
-				invite_code: json.thread_metadata?.invite || '',
-				isVerified: json.thread_metadata?.verification === "VERIFIED",
-				settings: json.thread_metadata?.settings || {}, // Ensure this matches your expected data type
-			};
-		} catch (error) {
-			console.error('Error while fetching newsletter info:', error);
-			throw error; // or handle the error as appropriate
-		}
-	};
 
 	/**
 	 * queries need to be fired on connection open
@@ -1100,7 +1017,6 @@ export const makeChatsSocket = (config: SocketConfig) => {
 		addMessageLabel,
 		removeMessageLabel,
 		star,
-		fetchExpiration,
-		getNewsletterInfo
+		fetchExpiration
 	}
 }
