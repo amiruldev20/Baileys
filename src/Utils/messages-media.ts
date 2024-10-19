@@ -81,6 +81,7 @@ const extractVideoThumb = async (
 	time: string,
 	size: { width: number, height: number },
   ) => new Promise<void>((resolve, reject) => {
+	console.log(ffmpeg)
 	ffmpeg(path)
 	  .on('end', () => {
 		console.log(`Thumbnail created successfully at ${destPath}`)
