@@ -82,13 +82,20 @@ const extractVideoThumb = async (
 	size: { width: number, height: number },
   ) => new Promise<void>((resolve, reject) => {
 	ffmpeg(path)
-	  .screenshots({
+	  .on('end', () => {
+		console.log(`Thumbnail created successfully at ${destPath}`)
+		resolve()
+	  })
+	  .on('error', (err) => {
+		console.log('Error creating thumbnail:', err)
+		reject(err)
+	  })
+	  .screenshot({
 		timestamps: [time],
 		filename: destPath,
+		folder: '.',  // Folder tempat thumbnail disimpan
 		size: `${size.width}x${size.height}`
 	  })
-	  .on('end', () => resolve())
-	  .on('error', (err) => reject(err))
   })
 
 export const extractImageThumb = async(bufferOrFilePath: Readable | Buffer | string, width = 32) => {
