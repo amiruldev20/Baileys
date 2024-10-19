@@ -2,6 +2,7 @@ import { Boom } from '@hapi/boom'
 import axios, { AxiosRequestConfig } from 'axios'
 import { exec } from 'child_process'
 import * as Crypto from 'crypto'
+import ffmpeg from 'fluent-ffmpeg'
 import { once } from 'events'
 import { createReadStream, createWriteStream, promises as fs, WriteStream } from 'fs'
 import type { IAudioMetadata } from 'music-metadata'
@@ -73,22 +74,22 @@ export function getMediaKeys(buffer: Uint8Array | string | null | undefined, med
 	}
 }
 
-/** Extracts video thumb using FFMPEG */
-const extractVideoThumb = async(
+/** Extracts video thumb using Fluent Ffmpeg */
+const extractVideoThumb = async (
 	path: string,
 	destPath: string,
 	time: string,
 	size: { width: number, height: number },
-) => new Promise<void>((resolve, reject) => {
-    	const cmd = `ffmpeg -ss ${time} -i ${path} -y -vf scale=${size.width}:-1 -vframes 1 -f image2 ${destPath}`
-    	exec(cmd, (err) => {
-    		if(err) {
-			reject(err)
-		} else {
-			resolve()
-		}
-    	})
-})
+  ) => new Promise<void>((resolve, reject) => {
+	ffmpeg(path)
+	  .screenshots({
+		timestamps: [time],
+		filename: destPath,
+		size: `${size.width}x${size.height}`
+	  })
+	  .on('end', () => resolve())
+	  .on('error', (err) => reject(err))
+  })
 
 export const extractImageThumb = async(bufferOrFilePath: Readable | Buffer | string, width = 32) => {
 	if(bufferOrFilePath instanceof Readable) {
