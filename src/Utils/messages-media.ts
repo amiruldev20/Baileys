@@ -2,8 +2,6 @@ import { Boom } from '@hapi/boom'
 import axios, { AxiosRequestConfig } from 'axios'
 import { exec } from 'child_process'
 import * as Crypto from 'crypto'
-import ffmpeg from 'fluent-ffmpeg'
-import ffmpegStatic from 'ffmpeg-static'
 import { once } from 'events'
 import { createReadStream, createWriteStream, promises as fs, WriteStream } from 'fs'
 import type { IAudioMetadata } from 'music-metadata'
@@ -20,7 +18,6 @@ import { aesDecryptGCM, aesEncryptGCM, hkdf } from './crypto'
 import { generateMessageID } from './generics'
 
 const getTmpFilesDirectory = () => tmpdir()
-ffmpeg.setFfmpegPath(ffmpegStatic)
 
 const getImageProcessingLibrary = async() => {
 	const [_jimp, sharp] = await Promise.all([
@@ -76,29 +73,22 @@ export function getMediaKeys(buffer: Uint8Array | string | null | undefined, med
 	}
 }
 
-/** Extracts video thumb using Fluent Ffmpeg */
-const extractVideoThumb = async (
+/** Extracts video thumb using FFMPEG */
+const extractVideoThumb = async(
 	path: string,
 	destPath: string,
 	time: string,
 	size: { width: number, height: number },
-  ) => new Promise<void>((resolve, reject) => {
-	ffmpeg(path)
-	  .on('end', () => {
-		console.log(`Thumbnail created successfully at ${destPath}`)
-		resolve()
-	  })
-	  .on('error', (err) => {
-		console.log('Error creating thumbnail:', err)
-		reject(err)
-	  })
-	  .screenshot({
-		timestamps: [time],
-		filename: destPath,
-		folder: '.',
-		size: `${size.width}x${size.height}`
-	  })
-  })
+) => new Promise<void>((resolve, reject) => {
+    	const cmd = `ffmpeg -ss ${time} -i ${path} -y -vf scale=${size.width}:-1 -vframes 1 -f image2 ${destPath}`
+    	exec(cmd, (err) => {
+    		if(err) {
+			reject(err)
+		} else {
+			resolve()
+		}
+    	})
+})
 
 export const extractImageThumb = async(bufferOrFilePath: Readable | Buffer | string, width = 32) => {
 	if(bufferOrFilePath instanceof Readable) {
